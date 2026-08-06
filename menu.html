@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUD de Setups ACC</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Montserrat, Arial, sans-serif;
+            background-color: #0b0b0b;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 30px 20px;
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-size: 2rem;
+            margin-bottom: 25px;
+            color: #f0f0f0;
+            border-bottom: 3px solid #ff4500;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        /* Controle das Telas */
+        .screen {
+            width: 100%;
+            max-width: 1400px;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .screen.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            width: 100%;
+            padding: 20px;
+            background-color: #141414;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+            box-sizing: border-box;
+        }
+
+        /* Botões Padrão */
+        .hud-button {
+            background-color: #1f1f1f;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 0;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            outline: none;
+        }
+
+        .hud-button:hover {
+            transform: translateY(-5px);
+            border-color: #ff4500;
+            box-shadow: 0 8px 20px rgba(255, 69, 0, 0.4);
+        }
+
+        .hud-button.clicked {
+            animation: pulse-click 0.3s forwards ease-in-out;
+        }
+
+        @keyframes pulse-click {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.93); border-color: #ff4500; box-shadow: 0 0 25px rgba(255, 69, 0, 0.9); }
+            100% { transform: scale(1); }
+        }
+
+        /* Estilo dos Carros */
+        .car-card .img-container {
+            width: 100%;
+            height: 110px;
+            background-color: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .car-card .img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .car-card:hover .img-container img {
+            transform: scale(1.05);
+        }
+
+        .car-card .text-container {
+            padding: 10px;
+            text-align: center;
+            background-color: #1a1a1a;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .car-card h2 {
+            font-size: 0.95rem;
+            margin: 0 0 3px 0;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .car-card p {
+            font-size: 0.75rem;
+            color: #aaa;
+            margin: 0;
+        }
+
+        /* ESTILO DOS CARDS DE PISTAS (IMAGENS PNG) */
+        .track-card {
+            background-color: #161616;
+            background-image: radial-gradient(circle, #222222 0%, #0d0d0d 100%);
+            border: 2px solid #282828;
+            border-radius: 12px;
+            aspect-ratio: 1 / 1.15;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .track-card:hover {
+            border-color: #ff4500;
+            box-shadow: 0 8px 25px rgba(255, 69, 0, 0.3);
+        }
+
+        .track-card .map-container {
+            width: 100%;
+            height: 75%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .track-card img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            filter: drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.2));
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+
+        .track-card:hover img {
+            transform: scale(1.08);
+            filter: drop-shadow(0px 0px 10px rgba(255, 69, 0, 0.7));
+        }
+
+        .track-card .track-title {
+            width: 100%;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+
+        /* Botão de Voltar e Infos */
+        .back-btn {
+            background-color: #222;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .back-btn:hover {
+            background-color: #ff4500;
+            border-color: #ff4500;
+        }
+
+        .selected-info {
+            color: #ff4500;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        /* ESTILO DA TELA DE CLIMA (SPLIT DIAGONAL) */
+        .weather-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .split-card {
+            position: relative;
+            width: 100%;
+            max-width: 750px;
+            height: 450px;
+            background-color: #111;
+            border-radius: 20px;
+            border: 3px solid #333;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+
+        .split-half {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            transition: transform 0.3s ease, filter 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .split-half img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.65);
+            transition: filter 0.3s ease, transform 0.3s ease;
+        }
+
+        .split-half .label {
+            position: relative;
+            z-index: 2;
+            font-size: 2.2rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #ffffff;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.9);
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+
+        /* LADO SOL */
+        .split-sun {
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+        }
+
+        .split-sun .label {
+            margin-right: 35%;
+            margin-bottom: 20%;
+        }
+
+        .split-sun:hover img {
+            filter: brightness(1);
+            transform: scale(1.05);
+        }
+
+        .split-sun:hover .label {
+            color: #ffaa00;
+            transform: scale(1.1);
+        }
+
+        /* LADO CHUVA */
+        .split-rain {
+            clip-path: polygon(100% 0, 100% 100%, 0 100%);
+        }
+
+        .split-rain .label {
+            margin-left: 35%;
+            margin-top: 20%;
+        }
+
+        .split-rain:hover img {
+            filter: brightness(1);
+            transform: scale(1.05);
+        }
+
+        .split-rain:hover .label {
+            color: #00aaff;
+            transform: scale(1.1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- TELA 1: CARROS (GT3) -->
+    <div id="cars-screen" class="screen active">
+        <h1>1. Escolha o Carro (GT3)</h1>
+
+        <div class="main-container">
+            <!-- ASTON MARTIN -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'AMR V12 Vantage GT3', 'amr_v12_vantage_gt3')">
+                <div class="img-container"><img src="amr_v12_vantage_gt3.png" alt="Aston Martin V12" onerror="this.src='https://cdn-8.motorsport.com/images/mgl/68yGpmX0/s200/logo-aston-martin.webp'"></div>
+                <div class="text-container"><h2>Aston Martin</h2><p>V12 Vantage GT3</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'AMR V8 Vantage GT3', 'amr_v8_vantage_gt3')">
+                <div class="img-container"><img src="amr_v8_vantage_gt3.png" alt="Aston Martin V8" onerror="this.src='https://cdn-8.motorsport.com/images/mgl/68yGpmX0/s200/logo-aston-martin.webp'"></div>
+                <div class="text-container"><h2>Aston Martin</h2><p>V8 Vantage GT3</p></div>
+            </button>
+
+            <!-- AUDI -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Audi R8 LMS GT3', 'audi_r8_lms')">
+                <div class="img-container"><img src="audi_r8_lms.png" alt="Audi R8" onerror="this.src='https://logowik.com/content/uploads/images/562_audi.jpg'"></div>
+                <div class="text-container"><h2>Audi</h2><p>R8 LMS GT3</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Audi R8 LMS Evo', 'audi_r8_lms_evo')">
+                <div class="img-container"><img src="audi_r8_lms_evo.png" alt="Audi Evo" onerror="this.src='https://logowik.com/content/uploads/images/562_audi.jpg'"></div>
+                <div class="text-container"><h2>Audi</h2><p>R8 LMS Evo</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Audi R8 LMS Evo II', 'audi_r8_lms_evo2')">
+                <div class="img-container"><img src="audi.png" alt="Audi Evo II" onerror="this.src='https://logowik.com/content/uploads/images/562_audi.jpg'"></div>
+                <div class="text-container"><h2>Audi</h2><p>R8 LMS Evo II</p></div>
+            </button>
+
+            <!-- BENTLEY -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Bentley Continental GT3 2015', 'bentley_gt3_2015')">
+                <div class="img-container"><img src="bentley_gt3_2015.png" alt="Bentley '15" onerror="this.src='https://i.pinimg.com/736x/6d/b0/1a/6db01ab19cb82fe3766a7094c63cb12e.jpg'"></div>
+                <div class="text-container"><h2>Bentley</h2><p>Continental '15</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Bentley Continental GT3 2018', 'bentley_gt3_2018')">
+                <div class="img-container"><img src="bentley_gt3_2018.png" alt="Bentley '18" onerror="this.src='https://i.pinimg.com/736x/6d/b0/1a/6db01ab19cb82fe3766a7094c63cb12e.jpg'"></div>
+                <div class="text-container"><h2>Bentley</h2><p>Continental '18</p></div>
+            </button>
+
+            <!-- BMW -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'BMW M6 GT3', 'bmw_m6_gt3')">
+                <div class="img-container"><img src="bmw_m6_gt3.png" alt="BMW M6" onerror="this.src='https://w0.peakpx.com/wallpaper/651/639/HD-wallpaper-bmw-logo-blue-bmw-logo-motorsport-red-white.jpg'"></div>
+                <div class="text-container"><h2>BMW</h2><p>M6 GT3</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'BMW M4 GT3', 'bmw_m4_gt3')">
+                <div class="img-container"><img src="bmw.png" alt="BMW M4" onerror="this.src='https://w0.peakpx.com/wallpaper/651/639/HD-wallpaper-bmw-logo-blue-bmw-logo-motorsport-red-white.jpg'"></div>
+                <div class="text-container"><h2>BMW</h2><p>M4 GT3</p></div>
+            </button>
+
+            <!-- JAGUAR -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Emil Frey Jaguar G3', 'emil_frey_jaguar_g3')">
+                <div class="img-container"><img src="emil_frey_jaguar_g3.png" alt="Jaguar G3" onerror="this.src='https://static.vecteezy.com/ti/vetor-gratis/p1/20502577-jaguar-simbolo-marca-logotipo-com-nome-branco-projeto-britanico-carro-automovel-ilustracao-com-preto-fundo-gratis-vetor.jpg'"></div>
+                <div class="text-container"><h2>Jaguar</h2><p>Emil Frey G3</p></div>
+            </button>
+
+            <!-- FERRARI -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Ferrari 488 GT3', 'ferrari_488_gt3')">
+                <div class="img-container"><img src="ferrari_488_gt3.png" alt="Ferrari 488" onerror="this.src='https://fullsend.agency/wp-content/uploads/2024/10/ferrari-logo.jpg'"></div>
+                <div class="text-container"><h2>Ferrari</h2><p>488 GT3</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Ferrari 488 GT3 Evo', 'ferrari_488_gt3_evo')">
+                <div class="img-container"><img src="ferrari_488_gt3_evo.png" alt="Ferrari Evo" onerror="this.src='https://fullsend.agency/wp-content/uploads/2024/10/ferrari-logo.jpg'"></div>
+                <div class="text-container"><h2>Ferrari</h2><p>488 GT3 Evo</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Ferrari 296 GT3', 'ferrari_296_gt3')">
+                <div class="img-container"><img src="ferrari_296_gt3.png" alt="Ferrari 296" onerror="this.src='https://fullsend.agency/wp-content/uploads/2024/10/ferrari-logo.jpg'"></div>
+                <div class="text-container"><h2>Ferrari</h2><p>296 GT3</p></div>
+            </button>
+
+            <!-- HONDA -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Honda NSX GT3', 'honda_nsx_gt3')">
+                <div class="img-container"><img src="honda_nsx_gt3.png" alt="Honda NSX" onerror="this.src='https://logodix.com/logo/708.jpg'"></div>
+                <div class="text-container"><h2>Honda</h2><p>NSX GT3</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Honda NSX GT3 Evo', 'honda_nsx_gt3_evo')">
+                <div class="img-container"><img src="honda_nsx_gt3_evo.png" alt="Honda Evo" onerror="this.src='https://logodix.com/logo/708.jpg'"></div>
+                <div class="text-container"><h2>Honda</h2><p>NSX GT3 Evo</p></div>
+            </button>
+
+            <!-- LAMBORGHINI -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Lamborghini Huracan GT3', 'lamborghini_huracan_gt3')">
+                <div class="img-container"><img src="lamborghini_huracan_gt3.png" alt="Lambo GT3" onerror="this.src='https://bandalheira.cdn.magazord.com.br/img/2022/05/produto/6760/plc-0508-placa-decorativa-lamborghini-logo-2.jpg?ims=fit-in/1200x1200'"></div>
+                <div class="text-container"><h2>Lamborghini</h2><p>Huracán GT3</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Lamborghini Huracan GT3 Evo', 'lamborghini_huracan_gt3_evo')">
+                <div class="img-container"><img src="lamborghini_huracan_gt3_evo.png" alt="Lambo Evo" onerror="this.src='https://bandalheira.cdn.magazord.com.br/img/2022/05/produto/6760/plc-0508-placa-decorativa-lamborghini-logo-2.jpg?ims=fit-in/1200x1200'"></div>
+                <div class="text-container"><h2>Lamborghini</h2><p>Huracán Evo</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Lamborghini Huracan GT3 EVO II', 'lamborghini_huracan_gt3_evo2')">
+                <div class="img-container"><img src="lamborghini_huracan_gt3_evo2.png" alt="Lambo Evo II" onerror="this.src='https://bandalheira.cdn.magazord.com.br/img/2022/05/produto/6760/plc-0508-placa-decorativa-lamborghini-logo-2.jpg?ims=fit-in/1200x1200'"></div>
+                <div class="text-container"><h2>Lamborghini</h2><p>Huracán EVO II</p></div>
+            </button>
+
+            <!-- LEXUS -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Lexus RC F GT3', 'lexus_rc_f_gt3')">
+                <div class="img-container"><img src="lexus_rc_f_gt3.png" alt="Lexus RCF" onerror="this.src='https://images.seeklogo.com/logo-png/8/1/lexus-logo-png_seeklogo-83673.png'"></div>
+                <div class="text-container"><h2>Lexus</h2><p>RC F GT3</p></div>
+            </button>
+
+            <!-- McLAREN -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'McLaren 650S GT3', 'mclaren_650s_gt3')">
+                <div class="img-container"><img src="mclaren_650s_gt3.png" alt="McLaren 650S" onerror="this.src='https://static.vecteezy.com/system/resources/previews/020/500/839/non_2x/mclaren-brand-logo-car-symbol-name-black-design-british-automobile-illustration-with-orange-background-free-vector.jpg'"></div>
+                <div class="text-container"><h2>McLaren</h2><p>650S GT3</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'McLaren 720S GT3', 'mclaren')">
+                <div class="img-container"><img src="mclaren.png" alt="McLaren 720S" onerror="this.src='https://static.vecteezy.com/system/resources/previews/020/500/839/non_2x/mclaren-brand-logo-car-symbol-name-black-design-british-automobile-illustration-with-orange-background-free-vector.jpg'"></div>
+                <div class="text-container"><h2>McLaren</h2><p>720S GT3</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'McLaren 720S GT3 Evo', 'mclaren_720s_gt3_evo')">
+                <div class="img-container"><img src="mclaren_720s_gt3_evo.png" alt="McLaren Evo" onerror="this.src='https://static.vecteezy.com/system/resources/previews/020/500/839/non_2x/mclaren-brand-logo-car-symbol-name-black-design-british-automobile-illustration-with-orange-background-free-vector.jpg'"></div>
+                <div class="text-container"><h2>McLaren</h2><p>720S GT3 Evo</p></div>
+            </button>
+
+            <!-- MERCEDES-AMG -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Mercedes-AMG GT3', 'mercedes')">
+                <div class="img-container"><img src="mercedes.png" alt="Mercedes GT3" onerror="this.src='https://images.seeklogo.com/logo-png/9/1/mercedes-benz-logo-png_seeklogo-91081.png'"></div>
+                <div class="text-container"><h2>Mercedes-AMG</h2><p>GT3 (2015)</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Mercedes-AMG GT3 Evo', 'mercedes_amg_gt3_evo')">
+                <div class="img-container"><img src="mercedes_amg_gt3_evo.png" alt="Mercedes Evo" onerror="this.src='https://images.seeklogo.com/logo-png/9/1/mercedes-benz-logo-png_seeklogo-91081.png'"></div>
+                <div class="text-container"><h2>Mercedes-AMG</h2><p>GT3 Evo</p></div>
+            </button>
+
+            <!-- NISSAN -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Nissan GT-R Nismo GT3 2015', 'nissan_gt_r_gt3_2015')">
+                <div class="img-container"><img src="nissan_gt_r_gt3_2015.png" alt="Nissan '15" onerror="this.src='https://logos-world.net/wp-content/uploads/2020/04/Nissan-Logo-2020.jpg'"></div>
+                <div class="text-container"><h2>Nissan</h2><p>GT-R GT3 '15</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Nissan GT-R Nismo GT3 2018', 'nissan_gt_r_gt3_2018')">
+                <div class="img-container"><img src="nissan_gt_r_gt3_2018.png" alt="Nissan '18" onerror="this.src='https://logos-world.net/wp-content/uploads/2020/04/Nissan-Logo-2020.jpg'"></div>
+                <div class="text-container"><h2>Nissan</h2><p>GT-R GT3 '18</p></div>
+            </button>
+
+            <!-- PORSCHE -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Porsche 911 GT3 R 2018', 'porsche_991_gt3_r')">
+                <div class="img-container"><img src="porsche_991_gt3_r.png" alt="Porsche 991" onerror="this.src='https://i.pinimg.com/736x/c2/fe/b2/c2feb22674d93eea8c790e7517c17617.jpg'"></div>
+                <div class="text-container"><h2>Porsche</h2><p>911 GT3 R '18</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Porsche 911 II GT3 R', 'porsche_991ii_gt3_r')">
+                <div class="img-container"><img src="porsche_991ii_gt3_r.png" alt="Porsche 991.2" onerror="this.src='https://i.pinimg.com/736x/c2/fe/b2/c2feb22674d93eea8c790e7517c17617.jpg'"></div>
+                <div class="text-container"><h2>Porsche</h2><p>911 II GT3 R</p></div>
+            </button>
+            <button class="hud-button car-card" onclick="selectCar(this, 'Porsche 911 GT3 R (992)', 'porsche_992_gt3_r')">
+                <div class="img-container"><img src="porsche_992_gt3_r.png" alt="Porsche 992" onerror="this.src='https://i.pinimg.com/736x/c2/fe/b2/c2feb22674d93eea8c790e7517c17617.jpg'"></div>
+                <div class="text-container"><h2>Porsche</h2><p>911 GT3 R (992)</p></div>
+            </button>
+
+            <!-- REITER -->
+            <button class="hud-button car-card" onclick="selectCar(this, 'Reiter Engineering R-EX GT3', 'reiter_engineering_r_ex_gt3')">
+                <div class="img-container"><img src="reiter_engineering_r_ex_gt3.png" alt="Reiter R-EX" onerror="this.src='https://images.ctfassets.net/lmiyf1b7ib63/3waUI4bhviiT91J9iBspxf/ce766901890a97832a3bd250502fa4e4/Reiter-Engineering-Logo-_no_border.png?q=75&w=900&fm=avif'"></div>
+                <div class="text-container"><h2>Reiter</h2><p>R-EX GT3</p></div>
+            </button>
+        </div>
+    </div>
+
+    <!-- TELA 2: PISTAS (IMAGENS LOCALES PNG) -->
+    <div id="tracks-screen" class="screen">
+        <button class="back-btn" onclick="goBackToCars()">&larr; Voltar para Carros</button>
+        <div id="selected-car-display" class="selected-info"></div>
+        <h1>2. Escolha o Circuito</h1>
+
+        <div class="main-container">
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Monza', 'monza')">
+                <div class="map-container"><img src="monza.png" alt="Monza" onerror="this.src='https://cdn.displate.com/artwork/324x454/2020-08-26/a4627bee353bdd8f94fc7581f7e41c3e_181d200fcba0c8e35b7dada43fc68d7a.jpg'"></div>
+                <div class="track-title">Monza</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Spa-Francorchamps', 'spa')">
+                <div class="map-container"><img src="spa.png" alt="Spa" onerror="this.src='https://i.pinimg.com/736x/6b/5e/df/6b5edf80a88f01b779bcf4cab8809406.jpg'"></div>
+                <div class="track-title">Spa</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Nürburgring GP', 'nurburgring')">
+                <div class="map-container"><img src="nurburgring.png" alt="Nürburgring" onerror="this.src='https://i.pinimg.com/736x/48/e2/03/48e203256a430c213f0d6fbe89f8cda8.jpg'"></div>
+                <div class="track-title">Nürburgring</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Nordschleife 24h', 'nordschleife')">
+                <div class="map-container"><img src="nordschleife.png" alt="Nordschleife" onerror="this.src='https://cdn.displate.com/artwork/2024-11-19/f4ca87af-da96-44da-8806-ed58469ab516.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Nordschleife</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Barcelona', 'barcelona')">
+                <div class="map-container"><img src="barcelona.png" alt="Barcelona" onerror="this.src='https://cdn.displate.com/artwork/324x454/2020-08-24/2dfefd706d8033f1f4819605e20c996d_01cca49ec175bc3a7ce3c66a05450189.jpg'"></div>
+                <div class="track-title">Barcelona</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Brands Hatch', 'brands_hatch')">
+                <div class="map-container"><img src="brands_hatch.png" alt="Brands Hatch" onerror="this.src='https://cdn.displate.com/artwork/2021-03-02/bcaa71fd430804c5870c27238cda506a_d1622c4744791214656b314bbdcad972.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Brands Hatch</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'COTA', 'cota')">
+                <div class="map-container"><img src="cota.png" alt="COTA" onerror="this.src='https://cdn.displate.com/artwork/2020-11-23/27e6f3d505b11909f17c7b21cf9ef8f5_f7e5491fb9eb9c97aa7fa6f909a19b6d.jpg?speedsize=w_480'"></div>
+                <div class="track-title">COTA</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Donington Park', 'donington')">
+                <div class="map-container"><img src="donington.png" alt="Donington" onerror="this.src='https://cdn.displate.com/artwork/2021-04-30/e3d9a84f5386662f1afc61a33e7c6b1e_ef2542a53c6c5ea01ef3f65b6a58c2d8.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Donington</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Imola', 'imola')">
+                <div class="map-container"><img src="imola.png" alt="Imola" onerror="this.src='https://cdn.displate.com/artwork/2021-04-11/e482b991f8ad7ca6512ee17a3acc6f8f_a93c39564876649775eba9c1abada384.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Imola</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Indianapolis', 'indianapolis')">
+                <div class="map-container"><img src="indianapolis.png" alt="Indianapolis" onerror="this.src='https://cdn.displate.com/artwork/2020-04-28/c13f19f3c13bf56b50315a10fd16c569_5634e30ef52db424de96418fb6f4e199.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Indianapolis</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Kyalami', 'kyalami')">
+                <div class="map-container"><img src="kyalami.png" alt="Kyalami" onerror="this.src='https://cdn.displate.com/artwork/2021-04-24/1a6763354fd63c5d6b6ffb59fdc56abd_d8a7ad9e4028ba5cd98182158caf7d34.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Kyalami</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Laguna Seca', 'laguna_seca')">
+                <div class="map-container"><img src="laguna_seca.png" alt="Laguna Seca" onerror="this.src='https://cdn.displate.com/artwork/2020-11-20/4bc34a2789bb629e1f06c7063b66e436_5c611baa781cd849c11fa4774042edb5.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Laguna Seca</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Misano', 'misano')">
+                <div class="map-container"><img src="misano.png" alt="Misano" onerror="this.src='https://cdn.displate.com/artwork/2020-11-26/6df2b6a14e15ed2f4ca2465abc96e239_68e609f7fa3abecf40b5da3bb5c62b5b.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Misano</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Mount Panorama', 'bathurst')">
+                <div class="map-container"><img src="bathurst.png" alt="Bathurst" onerror="this.src='https://cdn.displate.com/artwork/2020-11-22/cb7de6f20b2797d1937275e2f1dc25bc_9daf72df027e56bcc8391392bebb4999.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Bathurst</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Oulton Park', 'oulton_park')">
+                <div class="map-container"><img src="oulton_park.png" alt="Oulton Park" onerror="this.src='https://cdn.displate.com/artwork/2021-04-11/365f2ad0cfe5bbf541053cf448ce13f3_4d3002f385a1c2f73e0463e77df3a2ea.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Oulton Park</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Paul Ricard', 'paul_ricard')">
+                <div class="map-container"><img src="paul_ricard.png" alt="Paul Ricard" onerror="this.src='https://cdn.displate.com/artwork/2020-10-01/c32fc7ab0d9c8951f54dcec61843b346_4335d5c9abb2f215c0c408cbe45b4c69.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Paul Ricard</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Red Bull Ring', 'red_bull_ring')">
+                <div class="map-container"><img src="red_bull_ring.png" alt="Red Bull Ring" onerror="this.src='https://cdn.displate.com/artwork/2020-08-24/07d6bef0394e55134a7e2de51582d57c_86e8b01c3219d5cc82aa7bd9f48b54aa.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Red Bull Ring</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Snetterton', 'snetterton')">
+                <div class="map-container"><img src="snetterton.png" alt="Snetterton" onerror="this.src='https://cdn.displate.com/artwork/2021-04-12/b36031d0b8247123211c94d4b8a458a7_15d0994d1b1647f46972f95e135d5e93.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Snetterton</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Silverstone', 'silverstone')">
+                <div class="map-container"><img src="silverstone.png" alt="Silverstone" onerror="this.src='https://cdng.europosters.eu/pod_public/1300/136508.jpg'"></div>
+                <div class="track-title">Silverstone</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Suzuka', 'suzuka')">
+                <div class="map-container"><img src="suzuka.png" alt="Suzuka" onerror="this.src='https://cdn.displate.com/artwork/2020-08-28/352e2800b267c4f28ae0a0d72db84cfb_7c0625a61e066af28f58d1940b2c3ee9.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Suzuka</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Valencia', 'valencia')">
+                <div class="map-container"><img src="valencia.png" alt="Valencia" onerror="this.src='https://i.pinimg.com/736x/13/35/3c/13353c5615542c3712823658be31e84a.jpg'"></div>
+                <div class="track-title">Valencia</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Watkins Glen', 'watkins_glen')">
+                <div class="map-container"><img src="watkins_glen.png" alt="Watkins Glen" onerror="this.src='https://cdn.displate.com/artwork/2021-04-08/140328dc6cb2a2d2e77944be461bbca9_d9e4fcdf7d057bddb6ca0a7f02954965.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Watkins Glen</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Zandvoort', 'zandvoort')">
+                <div class="map-container"><img src="zandvoort.png" alt="Zandvoort" onerror="this.src='https://cdn.displate.com/artwork/2020-08-24/5dc7d27a3931b331ed663e5d236b5a41_bc2b07bc057ac0ceb431aa7f65d45f24.jpg?speedsize=w_480'"></div>
+                <div class="track-title">Zandvoort</div>
+            </button>
+
+            <button class="hud-button track-card" onclick="selectTrack(this, 'Zolder', 'zolder')">
+                <div class="map-container"><img src="zolder.png" alt="Zolder" onerror="this.src='https://static.vecteezy.com/ti/vetor-gratis/p1/29298481-o-circuito-zolder-mapa-sazonal-excursao-carro-e-superbike-corridas-mais-estilo-livre-facanha-eventos-as-desporto-motorizado-corrida-o-circuito-vetor.jpg'"></div>
+                <div class="track-title">Zolder</div>
+            </button>
+        </div>
+    </div>
+
+    <!-- TELA 3: CLIMA (SOL / CHUVA SPLIT) -->
+    <div id="weather-screen" class="screen">
+        <button class="back-btn" onclick="goBackToTracks()">&larr; Voltar para Pistas</button>
+        <div id="selected-summary-display" class="selected-info"></div>
+        <h1>3. Escolha a Condição de Pista</h1>
+
+        <div class="weather-container">
+            <div class="split-card">
+                <!-- LADO SOL / SECO -->
+                <div class="split-half split-sun" onclick="selectWeather(this, 'Seco', 'dry')">
+                    <img src="dry.png" alt="Pista Seca" onerror="this.src='https://projetomotor.com.br/wp-content/uploads/2021/10/Laguna-Seca-Saca-Rolhas.jpg'">
+                    <span class="label">SECO</span>
+                </div>
+
+                <!-- LADO CHUVA / MOLHADO -->
+                <div class="split-half split-rain" onclick="selectWeather(this, 'Molhado', 'wet')">
+                    <img src="wet.png" alt="Pista Molhada" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiTQq6x3iUKBCXn79FfFHGWic5ExXQ-vKwFyLfGq9ZkpBSUsV6vq_PThOY&s=10'">
+                    <span class="label">CHUVA</span>
+                </div>
+
+                <!-- LINHA DIVISÓRIA DIAGONAL -->
+                <div class="diagonal-line"></div>
+            </div>
+        </div>
+    </div>
+    <!-- FIM DA TELA DE PISTAS -->
+        </div> 
+    </div>
+
+    <!-- ⬇️ COLE O SEU HTML DO CLIMA AQUI ⬇️ -->
+    <!-- TELA 3: CLIMA (SOL / CHUVA SPLIT) -->
+    <div id="weather-screen" class="screen">
+        <button class="back-btn" onclick="goBackToTracks()">&larr; Voltar para Pistas</button>
+        <div id="selected-summary-display" class="selected-info"></div>
+        <h1>3. Escolha a Condição de Pista</h1>
+
+        <div class="weather-container">
+            <div class="split-card">
+                <!-- LADO SOL / SECO -->
+                <div class="split-half split-sun" onclick="selectWeather(this, 'Seco', 'dry')">
+                    <img src="dry.png" alt="Pista Seca" onerror="this.src='https://s100.iracing.com/wp-content/uploads/2024/09/spa-francorchamps-2024-screenshot-06.jpg'">
+                    <span class="label">SOL</span>
+                </div>
+
+                <!-- LADO CHUVA / MOLHADO -->
+                <div class="split-half split-rain" onclick="selectWeather(this, 'Molhado', 'wet')">
+                    <img src="wet.png" alt="Pista Molhada" onerror="this.src='https://i.pinimg.com/736x/00/76/58/00765843ee4ceff514648f0f3e36aeaa.jpg'">
+                    <span class="label">CHUVA</span>
+                </div>
+
+                <!-- LINHA DIVISÓRIA DIAGONAL -->
+                <div class="diagonal-line"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⬇️ O SCRIPT VEM LOGO EM SEGUIDA ⬇️ -->
+       <script>
+        let selectedCarName = "";
+        let selectedCarFolder = "";
+        let selectedTrackName = "";
+        let selectedTrackFolder = "";
+        let selectedWeatherName = "";
+        let selectedWeatherFolder = "";
+
+        /* Seleção de Carro */
+        function selectCar(element, carName, carFolder) {
+            element.classList.add('clicked');
+            selectedCarName = carName;
+            selectedCarFolder = carFolder;
+
+            setTimeout(() => {
+                element.classList.remove('clicked');
+                document.getElementById('selected-car-display').innerText = "Carro Selecionado: " + selectedCarName;
+                document.getElementById('cars-screen').classList.remove('active');
+                document.getElementById('tracks-screen').classList.add('active');
+                window.scrollTo(0, 0);
+            }, 300);
+        }
+
+        /* Seleção de Pista */
+        function selectTrack(element, trackName, trackFolder) {
+            element.classList.add('clicked');
+            selectedTrackName = trackName;
+            selectedTrackFolder = trackFolder;
+
+            setTimeout(() => {
+                element.classList.remove('clicked');
+                document.getElementById('selected-summary-display').innerText = selectedCarName + "  |  " + selectedTrackName;
+                document.getElementById('tracks-screen').classList.remove('active');
+                document.getElementById('weather-screen').classList.add('active');
+                window.scrollTo(0, 0);
+            }, 300);
+        }
+
+        /* Seleção de Clima */
+        function selectWeather(element, weatherName, weatherFolder) {
+            element.classList.add('clicked');
+            selectedWeatherName = weatherName;
+            selectedWeatherFolder = weatherFolder;
+
+            setTimeout(() => {
+                element.classList.remove('clicked');
+
+                console.log("=== SELEÇÃO FINAL CONCLUÍDA ===");
+                console.log("Carro:", selectedCarName, "(Pasta: " + selectedCarFolder + ")");
+                console.log("Pista:", selectedTrackName, "(Pasta: " + selectedTrackFolder + ")");
+                console.log("Clima:", selectedWeatherName, "(Pasta: " + selectedWeatherFolder + ")");
+
+                onSelectionComplete();
+            }, 300);
+        }
+
+        /* Navegação do Botão Voltar */
+        function goBackToCars() {
+            document.getElementById('tracks-screen').classList.remove('active');
+            document.getElementById('weather-screen').classList.remove('active');
+            document.getElementById('cars-screen').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function goBackToTracks() {
+            document.getElementById('weather-screen').classList.remove('active');
+            document.getElementById('cars-screen').classList.remove('active');
+            document.getElementById('tracks-screen').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        /* Função chamada após selecionar o clima */
+        function onSelectionComplete() {
+            // Próximo passo: Ação de carregar o Setup final
+        }
+    </script>
+
+</body>
+</html>
